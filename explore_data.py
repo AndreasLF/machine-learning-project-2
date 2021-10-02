@@ -4,6 +4,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 import load_data
 import os
+import seaborn as sns
 
 import plotly.express as px
 import plotly.graph_objects as go
@@ -104,4 +105,23 @@ for label in nondata_columns:
     fig = px.histogram(df, x = label, color=label)
     fig.update_layout(bargap = 0.01)
     fig.write_image("plots/histogram_"+ label +".jpg")
+
+
+
+# =============================================
+# Correlation matrix
+# =============================================
+# Define columns to include 
+cols = ["age", "capital-gain", "capital-loss", "hours-per-week"] 
+x= df[cols]
+
+# Calculate correlation matrix 
+corr = x.corr()
+
+# Plot correlation matrix 
+sns.heatmap(corr, 
+            xticklabels=corr.columns.values,
+            yticklabels=corr.columns.values,
+            annot=True)
+
     
