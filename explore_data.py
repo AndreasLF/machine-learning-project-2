@@ -46,6 +46,18 @@ print("Female count: " + str(female_count))
 print("Male percentage: " + str(male_count/(male_count+female_count)*100))
 print("Female percentage: " + str(female_count/(male_count+female_count)*100))
 
+# =============================================
+# Capital-gain/loss count
+# =============================================
+# Count males and females in dataset 
+cap_gain_count = len(df[df["capital-gain"] == 0])
+cap_loss_count = len(df[df["capital-loss"] == 0])
+
+print("Capital gain = 0 count: " + str(cap_gain_count))
+print("Capital gain = 0 percentage: " + str(cap_gain_count/len(df["capital-gain"])))
+
+print("Capital gain = 0 count: " + str(cap_loss_count))
+print("Capital gain = 0 percentage: " + str(cap_loss_count/len(df["capital-loss"])))
 
 # =============================================
 # Write boxplots to file
