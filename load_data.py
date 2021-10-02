@@ -1,7 +1,7 @@
 import numpy as np 
 import pandas as pd
 from sklearn.preprocessing import OneHotEncoder
-# import seaborn as sns
+
 data_path = "data/adult.data"
 names_path = "data/adult.names"
 
@@ -19,22 +19,21 @@ for line in lines:
         col_labels.append(line.split(":")[0])
 
 
-
+# Add the label colum name 
 col_labels.append("annual-income")
-# print(col_labels)
 
-df = pd.read_csv(data_path, delimiter=",")
-# print(len(col_labels))
-# print(len(df.columns))
+# Read the data file 
+df = pd.read_csv(data_path, delimiter=", ")
+
+# Set the column labels 
 df.columns = col_labels
 
+# Replace '?' with NaN values
+df[df == '?'] = np.nan
 
-# pd.set_option('display.max_rows',300)
-# print(df)
-
-# print(df.columns)
 
 workclass_columns = df["workclass"].unique()
+print(workclass_columns)
 
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
