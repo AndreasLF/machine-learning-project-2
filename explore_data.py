@@ -20,11 +20,13 @@ df = load_data.df
 # =============================================
 print("Amount of NaN values")
 print(df.isna().sum())
+print(df.isna().sum().to_latex())
+
 
 # =============================================
 # Describe (statistcs) 
 # =============================================
-data_cols = ["age", "capital-gain", "capital-loss", "hours-per-week"]
+data_cols = ["age", "capital-gain", "capital-loss", "hours-per-week", "education-num"]
 # Take only data that are ratios or intevals 
 sdf = df[data_cols]
 print("Describe statistics")
@@ -39,8 +41,8 @@ print(sdf.describe().to_latex())
 # Male-female count
 # =============================================
 # Count males and females in dataset 
-male_count = len(df[df["sex"] == " Male"])
-female_count = len(df[df["sex"] == " Female"])
+male_count = len(df[df["sex"] == "Male"])
+female_count = len(df[df["sex"] == "Female"])
 
 print("Male count: " + str(male_count))
 print("Female count: " + str(female_count))
@@ -112,6 +114,8 @@ for label in ["capital-gain", "capital-loss", "hours-per-week"]:
 # =============================================
 # Create histograms
 # =============================================
+group_name = 'annual-income'
+
 columns = list(df.columns)
 
 nondata_columns = [x for x in columns if x not in data_cols]
@@ -119,25 +123,36 @@ nondata_columns = [x for x in columns if x not in data_cols]
 # Loop through labels and create histogram plot 
 for label in nondata_columns:
     print("Creating histogram for: " + label)
-    fig = px.histogram(df, x = label, color=label)
-    fig.update_layout(bargap = 0.01)
-    fig.write_image("plots/histogram_"+ label +".jpg")
 
+    # Group by annual income
+    df_group = df.groupby([label, group_name]).size().reset_index()
+    # Add a percentage column 
+    df_group['percentage'] = df.groupby([label, group_name]).size().groupby(level=0).apply(lambda x: 100 * x / float(x.sum())).values
+    # Set the colums in the new dataframe
+    df_group.columns = [label, group_name, 'Counts', 'Percentage']
+    # Make the barplot with calculated percentage 
+    fig = px.bar(df_group, x=label, y=['Counts'], barmode="group", color=group_name, text=df_group['Percentage'].apply(lambda x: '{0:1.2f}%'.format(x)))
+    # fig = px.histogram(df, x = label, color=label)
+    # fig.update_layout(bargap = 0.01)
+    fig.write_image("plots/histogram_"+ label +".jpg")
 
 
 # =============================================
 # Correlation matrix
 # =============================================
 # Define columns to include 
-cols = ["age", "capital-gain", "capital-loss", "hours-per-week"] 
+cols = ["age", "capital-gain", "capital-loss", "hours-per-week", "education-num"] 
 x= df[cols]
 
 # Calculate correlation matrix 
 corr = x.corr()
 
 # Plot correlation matrix 
-sns.heatmap(corr, 
+sns_heatmap = sns.heatmap(corr, 
             xticklabels=corr.columns.values,
             yticklabels=corr.columns.values,
-            annot=True)
+            annot=True, cmap="Blues")
 
+fig = sns_heatmap.get_figure()
+
+fig.savefig("plots/correlation_matrix.jpg", bbox_inches='tight')
