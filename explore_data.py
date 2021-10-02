@@ -14,15 +14,15 @@ if not os.path.exists("plots"):
 
 df = load_data.df
 
-# # =============================================
-# # Count NaN values 
-# # =============================================
+# =============================================
+# Count NaN values 
+# =============================================
 print("Amount of NaN values")
 print(df.isna().sum())
 
-# # =============================================
-# # Describe (statistcs) 
-# # =============================================
+# =============================================
+# Describe (statistcs) 
+# =============================================
 data_cols = ["age", "capital-gain", "capital-loss", "hours-per-week"]
 # Take only data that are ratios or intevals 
 sdf = df[data_cols]
@@ -33,9 +33,23 @@ print(sdf.describe())
 print("Latex table: Describe statistics")
 print(sdf.describe().to_latex())
 
-# # =============================================
-# # Write boxplots to file
-# # =============================================
+
+# =============================================
+# Male-female count
+# =============================================
+# Count males and females in dataset 
+male_count = len(df[df["sex"] == " Male"])
+female_count = len(df[df["sex"] == " Female"])
+
+print("Male count: " + str(male_count))
+print("Female count: " + str(female_count))
+print("Male percentage: " + str(male_count/(male_count+female_count)*100))
+print("Female percentage: " + str(female_count/(male_count+female_count)*100))
+
+
+# =============================================
+# Write boxplots to file
+# =============================================
 
 # Data to plot 
 data_cols = ["age", "capital-gain", "capital-loss", "hours-per-week"]
@@ -53,8 +67,8 @@ for label in data_cols:
 
 # Age histogram colored by sex 
 print("Creating histogram for: age")
-fig = px.histogram(df, x = "age", color = "sex")
-fig.update_layout(bargap = 0.01)
+fig = px.histogram(df, x = "age", color = "sex", barmode="group")
+fig.update_layout(bargap = 0.2)
 fig.write_image("plots/histogram_"+ "age" +".jpg")
 
 # Loop through labels and create histogram plot 
