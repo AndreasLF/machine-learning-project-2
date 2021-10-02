@@ -89,3 +89,19 @@ for label in ["capital-gain", "capital-loss", "hours-per-week"]:
     fig = px.histogram(df, x = label)
     fig.update_layout(bargap = 0.01)
     fig.write_image("plots/histogram_"+ label +".jpg")
+
+
+# =============================================
+# Create histograms
+# =============================================
+columns = list(df.columns)
+
+nondata_columns = [x for x in columns if x not in data_cols]
+
+# Loop through labels and create histogram plot 
+for label in nondata_columns:
+    print("Creating histogram for: " + label)
+    fig = px.histogram(df, x = label, color=label)
+    fig.update_layout(bargap = 0.01)
+    fig.write_image("plots/histogram_"+ label +".jpg")
+    
