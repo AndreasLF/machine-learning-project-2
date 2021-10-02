@@ -61,6 +61,23 @@ print("Capital gain = 0 count: " + str(cap_loss_count))
 print("Capital gain = 0 percentage: " + str(cap_loss_count/len(df["capital-loss"])))
 
 # =============================================
+# Print attribute values (min/max if numerical)
+# =============================================
+cols = list(df.columns)
+
+for col in cols:
+    if type(df[col][0]) == str:
+        print(col + ":")
+        uniquelist = list(df[col].unique())
+        uniquelist = map(str, uniquelist)
+        print(", ".join(uniquelist))
+    else:
+        print(col + ":")
+        print("Min: " + str(df[col].min()))
+        print("Max: " + str(df[col].max()))
+    print()
+
+# =============================================
 # Write boxplots to file
 # =============================================
 
@@ -124,4 +141,3 @@ sns.heatmap(corr,
             yticklabels=corr.columns.values,
             annot=True)
 
-    
