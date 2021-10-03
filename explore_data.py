@@ -15,6 +15,7 @@ if not os.path.exists("plots"):
 
 df = load_data.df
 
+jpg_scale = 6
 
 # =============================================
 # Count NaN values 
@@ -97,7 +98,7 @@ data_cols = ["age", "capital-gain", "capital-loss", "hours-per-week", "education
 for label in data_cols:
     print("Creating box plot for label: " + label )
     fig = px.box(df, y=label, points="all")
-    fig.write_image("plots/boxplot_"+ label +".jpg")
+    fig.write_image("plots/boxplot_"+ label +".jpg", scale=jpg_scale)
     fig.write_image("plots/svg/boxplot_"+ label +".svg")
 
 
@@ -110,16 +111,15 @@ for label in data_cols:
 print("Creating histogram for: age")
 fig = px.histogram(df, x = "age", color = "sex", barmode="group")
 fig.update_layout(bargap = 0.2)
-fig.write_image("plots/histogram_"+ "age_sex" +".jpg")
+fig.write_image("plots/histogram_"+ "age_sex" +".jpg", scale=jpg_scale)
 
 # Loop through labels and create histogram plot 
 for label in ["capital-gain", "capital-loss", "hours-per-week", "education-num", "age"]:
     print("Creating histogram for: " + label)
     fig = px.histogram(df, x = label)
     fig.update_layout(bargap = 0.01)
-    fig.write_image("plots/histogram_"+ label +".jpg")
+    fig.write_image("plots/histogram_"+ label +".jpg", scale=jpg_scale)
     fig.write_image("plots/svg/histogram_"+ label +".svg")
-
 
 
 # =============================================
@@ -147,12 +147,12 @@ for label in nondata_columns:
         fig = px.bar(df_group, x=label, y=['Counts'], barmode="group", color=group_name, text=df_group['Percentage'].apply(lambda x: '{0:1.2f}%'.format(x)))
         # fig = px.histogram(df, x = label, color=label)
         # fig.update_layout(bargap = 0.01)
-        fig.write_image("plots/histogram_percentages_"+ label +".jpg")
+        fig.write_image("plots/histogram_percentages_"+ label +".jpg", scale=jpg_scale)
         fig.write_image("plots/svg/histogram_percentages_"+ label +".svg")
 
         fig = px.histogram(df, x = label)
         fig.update_layout(bargap = 0.01)
-        fig.write_image("plots/histogram_"+ label +".jpg")
+        fig.write_image("plots/histogram_"+ label +".jpg", scale=jpg_scale)
         fig.write_image("plots/svg/histogram_"+ label +".svg")
 
 
@@ -161,7 +161,7 @@ for label in nondata_columns:
 # Correlation matrix
 # =============================================
 # Define columns to include 
-cols = ["age", "capital-gain", "capital-loss", "hours-per-week", "education-num"] 
+cols = ["age", "capital-gain", "capital-loss", "hours-per-week"] 
 x= df[cols]
 
 # Calculate correlation matrix 
@@ -175,6 +175,6 @@ sns_heatmap = sns.heatmap(corr,
 
 fig = sns_heatmap.get_figure()
 
-fig.savefig("plots/correlation_matrix.jpg", bbox_inches='tight')
+fig.savefig("plots/correlation_matrix.jpg", bbox_inches='tight', scale=jpg_scale)
 fig.savefig("plots/svg/correlation_matrix.svg", bbox_inches='tight')
 
