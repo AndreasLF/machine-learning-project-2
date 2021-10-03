@@ -23,15 +23,13 @@ for line in lines:
 col_labels.append("annual-income")
 
 # Read the data file
-df = pd.read_csv(data_path, delimiter=", ")
+df = pd.read_csv(data_path, engine="python", delimiter=", ")
 
 # Set the column labels
 df.columns = col_labels
 
 # Replace '?' with NaN values
-for col in ['workclass', 'occupation', 'native-country']:
-    df[col].fillna(df[col].mode()[0], inplace=True)
-
+df[df == '?'] = np.nan
 
 workclass_columns = df["workclass"].unique()
 #print(workclass_columns)
