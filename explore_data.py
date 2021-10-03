@@ -15,6 +15,13 @@ if not os.path.exists("plots"):
 
 df = load_data.df
 
+
+# =============================================
+# Count NaN values 
+# =============================================
+print("Dataframe info")
+print(df.info())
+
 # =============================================
 # Count NaN values 
 # =============================================
@@ -84,31 +91,35 @@ for col in cols:
 # =============================================
 
 # Data to plot 
-data_cols = ["age", "capital-gain", "capital-loss", "hours-per-week"]
+data_cols = ["age", "capital-gain", "capital-loss", "hours-per-week", "education-num"]
 
 # Loop through columns and make boxplot 
 for label in data_cols:
     print("Creating box plot for label: " + label )
     fig = px.box(df, y=label, points="all")
     fig.write_image("plots/boxplot_"+ label +".jpg")
+    fig.write_image("plots/svg/boxplot_"+ label +".svg")
+
 
 
 # =============================================
-# Create histograms
+# Create histograms (numerical data)
 # =============================================
 
 # Age histogram colored by sex 
 print("Creating histogram for: age")
 fig = px.histogram(df, x = "age", color = "sex", barmode="group")
 fig.update_layout(bargap = 0.2)
-fig.write_image("plots/histogram_"+ "age" +".jpg")
+fig.write_image("plots/histogram_"+ "age_sex" +".jpg")
 
 # Loop through labels and create histogram plot 
-for label in ["capital-gain", "capital-loss", "hours-per-week"]:
+for label in ["capital-gain", "capital-loss", "hours-per-week", "education-num", "age"]:
     print("Creating histogram for: " + label)
     fig = px.histogram(df, x = label)
     fig.update_layout(bargap = 0.01)
     fig.write_image("plots/histogram_"+ label +".jpg")
+    fig.write_image("plots/svg/histogram_"+ label +".svg")
+
 
 
 # =============================================
@@ -122,19 +133,28 @@ nondata_columns = [x for x in columns if x not in data_cols]
 
 # Loop through labels and create histogram plot 
 for label in nondata_columns:
-    print("Creating histogram for: " + label)
 
-    # Group by annual income
-    df_group = df.groupby([label, group_name]).size().reset_index()
-    # Add a percentage column 
-    df_group['percentage'] = df.groupby([label, group_name]).size().groupby(level=0).apply(lambda x: 100 * x / float(x.sum())).values
-    # Set the colums in the new dataframe
-    df_group.columns = [label, group_name, 'Counts', 'Percentage']
-    # Make the barplot with calculated percentage 
-    fig = px.bar(df_group, x=label, y=['Counts'], barmode="group", color=group_name, text=df_group['Percentage'].apply(lambda x: '{0:1.2f}%'.format(x)))
-    # fig = px.histogram(df, x = label, color=label)
-    # fig.update_layout(bargap = 0.01)
-    fig.write_image("plots/histogram_"+ label +".jpg")
+    if label != group_name:
+        print("Creating histogram for: " + label)
+
+        # Group by annual income
+        df_group = df.groupby([label, group_name]).size().reset_index()
+        # Add a percentage column 
+        df_group['percentage'] = df.groupby([label, group_name]).size().groupby(level=0).apply(lambda x: 100 * x / float(x.sum())).values
+        # Set the colums in the new dataframe
+        df_group.columns = [label, group_name, 'Counts', 'Percentage']
+        # Make the barplot with calculated percentage 
+        fig = px.bar(df_group, x=label, y=['Counts'], barmode="group", color=group_name, text=df_group['Percentage'].apply(lambda x: '{0:1.2f}%'.format(x)))
+        # fig = px.histogram(df, x = label, color=label)
+        # fig.update_layout(bargap = 0.01)
+        fig.write_image("plots/histogram_percentages_"+ label +".jpg")
+        fig.write_image("plots/svg/histogram_percentages_"+ label +".svg")
+
+        fig = px.histogram(df, x = label)
+        fig.update_layout(bargap = 0.01)
+        fig.write_image("plots/histogram_"+ label +".jpg")
+        fig.write_image("plots/svg/histogram_"+ label +".svg")
+
 
 
 # =============================================
@@ -156,3 +176,5 @@ sns_heatmap = sns.heatmap(corr,
 fig = sns_heatmap.get_figure()
 
 fig.savefig("plots/correlation_matrix.jpg", bbox_inches='tight')
+fig.savefig("plots/svg/correlation_matrix.svg", bbox_inches='tight')
+
