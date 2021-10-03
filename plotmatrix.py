@@ -13,7 +13,7 @@ df = load_data.df
 mpl.style.use("seaborn-colorblind")
 
 # attributes to plot 
-attribute_names = ["age", "capital-gain", "capital-loss", "hours-per-week", "education-num"]
+attribute_names = ["age", "capital-gain", "capital-loss", "hours-per-week"]
 # Get the columns from the dataset and convert to numpy array
 X = df[attribute_names].to_numpy()
 
@@ -31,7 +31,7 @@ M = len(attribute_names)
 C = len(class_names)
 
 ## Next we plot a number of atttributes
-attributes = [0,1,2,3,4]
+attributes = [0,1,2,3]
 num_atr = len(attributes)
 
 
