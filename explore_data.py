@@ -15,6 +15,8 @@ if not os.path.exists("plots"):
 
 df = load_data.df
 
+pd.options.display.float_format = '{:.2f}'.format
+
 jpg_scale = 6
 
 # =============================================
@@ -34,7 +36,7 @@ print(df.isna().sum().to_latex())
 # =============================================
 # Describe (statistcs) 
 # =============================================
-data_cols = ["age", "capital-gain", "capital-loss", "hours-per-week", "education-num"]
+data_cols = ["age", "capital-gain", "capital-loss", "hours-per-week"]
 # Take only data that are ratios or intevals 
 sdf = df[data_cols]
 print("Describe statistics")
