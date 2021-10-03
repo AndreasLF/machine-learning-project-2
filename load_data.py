@@ -5,12 +5,12 @@ from sklearn.preprocessing import OneHotEncoder
 data_path = "data/adult.data"
 names_path = "data/adult.names"
 
-# Open the names file and read lines 
+# Open the names file and read lines
 with open(names_path) as f:
     # print(f.read())
     lines = f.readlines()
 
-# Loop through lines and append column labels to list 
+# Loop through lines and append column labels to list
 col_labels = []
 for line in lines:
     line.rstrip().replace(', ', '|||').replace(',', '```').replace('|||', ', ').replace('```', '|')
@@ -19,21 +19,22 @@ for line in lines:
         col_labels.append(line.split(":")[0])
 
 
-# Add the label colum name 
+# Add the label colum name
 col_labels.append("annual-income")
 
-# Read the data file 
+# Read the data file
 df = pd.read_csv(data_path, delimiter=", ")
 
-# Set the column labels 
+# Set the column labels
 df.columns = col_labels
 
 # Replace '?' with NaN values
-df[df == '?'] = np.nan
+for col in ['workclass', 'occupation', 'native-country']:
+    df[col].fillna(df[col].mode()[0], inplace=True)
 
 
 workclass_columns = df["workclass"].unique()
-print(workclass_columns)
+#print(workclass_columns)
 
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
