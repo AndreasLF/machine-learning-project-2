@@ -175,6 +175,6 @@ sns_heatmap = sns.heatmap(corr,
 
 fig = sns_heatmap.get_figure()
 
-fig.savefig("plots/correlation_matrix.jpg", bbox_inches='tight', scale=jpg_scale)
+fig.savefig("plots/correlation_matrix.jpg", bbox_inches='tight')
 fig.savefig("plots/svg/correlation_matrix.svg", bbox_inches='tight')
 
