@@ -20,16 +20,19 @@ if not os.path.exists("plots"):
     os.mkdir("plots")
 pd.options.mode.chained_assignment = None
 
+pd.options.display.float_format = '{:.2f}'.format
+
+
 # ------------------------- Label Encoding ------------------------------------------
 df = load_data.df
 X = df.drop(['annual-income'], axis=1)
 y = df['annual-income']
 
-features = ["education","sex","native-country","workclass","marital-status","occupation","relationship","race"]
+# features = ["education","sex","native-country","workclass","marital-status","occupation","relationship","race"]
 features = list(X.columns)
 
 # Replace NaN values with a string 
-df = df.fillna('NaN')
+# df = df.fillna('NaN')
 
 # print(df.isna().sum())
 # print()
@@ -106,7 +109,7 @@ C = len(classes)
 # Plot principal components
 # ----------------------------------
 # Indices of the principal components to be plotted
-PCs_list = [(0,1),(1,2)]
+PCs_list = [(0,1),(1,2),(11,12)]
 
 for PCs in PCs_list:
     i = PCs[0]
@@ -126,14 +129,25 @@ for PCs in PCs_list:
     ylabel('PC{0}'.format(j+1))
     f.savefig("plots/PC"+str(i+1)+"_PC"+str(j+1)+"_plot.jpg", bbox_inches='tight')
 
-# principal_components = []
-# for n in range(1,15):
-#     principal_components.append(f'PC{n}')
-# # print(principal_components)
-# ExplainedVarTable = pd.DataFrame(np.matrix([rho*100,cummulative*100]).T,
-#                                  index=principal_components,
-#                                  columns=["Explained Variance","Cummulative Sum"])
-# print(ExplainedVarTable.to_latex())
+principal_components = []
+for n in range(1,15):
+    principal_components.append(f'PC{n}')
+# print(principal_components)
+ExplainedVarTable = pd.DataFrame(np.matrix([rho*100,cummulative*100]).T,
+                                 index=principal_components,
+                                 columns=["Explained Variance","Cummulative Sum"])
+print(ExplainedVarTable.to_latex())
+
+
+
+
+
+
+
+
+
+
+
 
 # ----------------------- PCA Directions --------------------------
 # # Subtract the mean from the data
@@ -189,7 +203,7 @@ for PCs in PCs_list:
 #     plt.subplot(nrows, ncols, 3 + k)
 #     for att in range(V.shape[1]):
 #         plt.arrow(0, 0, V[att, i], V[att, j])
-#         plt.text(V[att, i], V[att, j], features[att])
+#         plt.text(V[att, i], V[att, j], features[att]) 
 #     plt.xlim([-1, 1])
 #     plt.ylim([-1, 1])
 #     plt.xlabel('PC' + str(i + 1))

@@ -28,9 +28,6 @@ df = pd.read_csv(data_path, engine="python", delimiter=", ")
 # Set the column labels
 df.columns = col_labels
 
-# Replace '?' with NaN values
-df[df == '?'] = np.nan
-
 workclass_columns = df["workclass"].unique()
 #print(workclass_columns)
 

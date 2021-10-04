@@ -14,6 +14,8 @@ if not os.path.exists("plots"):
     os.mkdir("plots")
 
 df = load_data.df
+df[df == '?'] = np.nan
+
 
 pd.options.display.float_format = '{:.2f}'.format
 
