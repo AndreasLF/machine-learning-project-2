@@ -4,6 +4,13 @@ from sklearn import model_selection
 import torch
 from toolbox_02450 import train_neural_net
 
+# Check if graphics card is available 
+if torch.cuda.is_available():  
+  dev = "cuda:0" 
+else:  
+  dev = "cpu"
+device = torch.device(dev)  
+
 # =============================================
 # Prepare data for regression
 # =============================================
@@ -380,10 +387,10 @@ for train_idxs, test_idxs in cv_outer.split(X,y):
         y_test_inner_r = y_test_inner.reshape(len(y_test_inner),1)   
 
         # Convert data to tensors 
-        X_train_inner_tensor = torch.from_numpy(X_train_inner)
-        y_train_inner_tensor = torch.from_numpy(y_train_inner_r)
-        X_test_inner_tensor = torch.from_numpy(X_test_inner)
-        y_test_inner_tensor = torch.from_numpy(y_test_inner_r)
+        X_train_inner_tensor = torch.from_numpy(X_train_inner).to(device)
+        y_train_inner_tensor = torch.from_numpy(y_train_inner_r).to(device)
+        X_test_inner_tensor = torch.from_numpy(X_test_inner).to(device)
+        y_test_inner_tensor = torch.from_numpy(y_test_inner_r).to(device)
 
         # Convert tensors to float tensorst
         X_train_inner_tensor =  X_train_inner_tensor.type(torch.FloatTensor)
@@ -477,10 +484,10 @@ for train_idxs, test_idxs in cv_outer.split(X,y):
     y_test_r = y_test.reshape(len(y_test),1)   
 
     # Convert data to tensors 
-    X_train_tensor = torch.from_numpy(X_train)
-    y_train_tensor = torch.from_numpy(y_train_r)
-    X_test_tensor = torch.from_numpy(X_test)
-    y_test_tensor = torch.from_numpy(y_test_r)
+    X_train_tensor = torch.from_numpy(X_train).to(device)
+    y_train_tensor = torch.from_numpy(y_train_r).to(device)
+    X_test_tensor = torch.from_numpy(X_test).to(device)
+    y_test_tensor = torch.from_numpy(y_test_r).to(device)
 
     # Convert tensors to float tensorst
     X_train_tensor =  X_train_tensor.type(torch.FloatTensor)
@@ -510,6 +517,7 @@ for train_idxs, test_idxs in cv_outer.split(X,y):
     opt_hidden_units_ann[k1] = opt_hidden_units
     error_test_ann[k1] = mse
     # Increment k-fold layer counter 
+    break
     k1 += 1
 # ===========================================================================
 
