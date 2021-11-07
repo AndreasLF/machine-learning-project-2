@@ -6,10 +6,13 @@ from toolbox_02450 import train_neural_net
 
 # Check if graphics card is available 
 if torch.cuda.is_available():  
-  dev = "cuda:0" 
+    dev = "cuda" 
+    # print ('Available devices ', torch.cuda.device_count())
+    print ('Current cuda device ', torch.cuda.current_device())
 else:  
-  dev = "cpu"
+    dev = "cpu"
 device = torch.device(dev)  
+print("Device: " + dev)
 
 # =============================================
 # Prepare data for regression
@@ -298,7 +301,7 @@ print(table.to_latex())
 
 
 # =============================================
-# Regression and baseline two-fold cross-validation
+# Regression, ANN and baseline two-fold cross-validation
 # =============================================
 
 # Amount of K-folds in inner and outer fold
@@ -310,8 +313,6 @@ K2 = 10
 lambdas = np.power(10.,range(-2,12))
 
 # Initialize variables 
-
-
 error_train_rlr = np.empty((K1,1))
 error_test_rlr = np.empty((K1,1))
 opt_lambdas = np.empty((K1,1))
@@ -517,7 +518,6 @@ for train_idxs, test_idxs in cv_outer.split(X,y):
     opt_hidden_units_ann[k1] = opt_hidden_units
     error_test_ann[k1] = mse
     # Increment k-fold layer counter 
-    break
     k1 += 1
 # ===========================================================================
 
