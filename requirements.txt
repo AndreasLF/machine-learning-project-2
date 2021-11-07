@@ -2,9 +2,11 @@
 # $ conda create --name <env> --file <this file>
 # platform: win-64
 blas=1.0=mkl
-ca-certificates=2021.5.30=h5b45459_0
-certifi=2021.5.30=py36ha15d459_0
+ca-certificates=2021.10.26=haa95532_2
+certifi=2020.12.5=py36haa95532_0
+cpuonly=2.0=0
 cycler=0.10.0=py36haa95532_0
+dataclasses=0.8=pyh4f3eec9_6
 freetype=2.10.4=hd328e21_0
 icc_rt=2019.0.0=h0cc432a_1
 icu=58.2=ha925a31_3
@@ -19,6 +21,7 @@ libcblas=3.9.0=5_hd5c7e75_netlib
 liblapack=3.9.0=5_hd5c7e75_netlib
 libpng=1.6.37=h2a8f88b_0
 libtiff=4.2.0=hd0e1b90_0
+libuv=1.40.0=he774522_0
 lz4-c=1.9.3=h2bbff1b_1
 m2w64-gcc-libgfortran=5.3.0=6
 m2w64-gcc-libs=5.3.0=7
@@ -37,7 +40,7 @@ msys2-conda-epoch=20160418=1
 numpy=1.17.0=py36h19fb1c0_0
 numpy-base=1.17.0=py36hc3f5095_0
 olefile=0.46=py36_0
-openssl=1.1.1l=h8ffe710_0
+openssl=1.1.1l=h2bbff1b_0
 pandas=1.1.3=py36ha925a31_0
 patsy=0.5.2=pyhd8ed1ab_0
 pillow=8.3.1=py36h4fa10fc_0
@@ -49,6 +52,8 @@ python=3.6.13=h3758d61_0
 python-dateutil=2.8.1=py_0
 python-kaleido=0.2.1=pyhd8ed1ab_0
 python_abi=3.6=2_cp36m
+pytorch=1.10.0=py3.6_cpu_0
+pytorch-mutex=1.0=cpu
 pytz=2020.1=py_0
 qt=5.9.7=vc14h73c81de_0
 scikit-learn=0.22.1=py36h7208079_1
@@ -61,7 +66,10 @@ sqlite=3.36.0=h2bbff1b_0
 statsmodels=0.12.2=py36h6434af4_0
 tenacity=8.0.1=py36haa95532_0
 tk=8.6.10=he774522_0
+torchaudio=0.10.0=py36_cpu
+torchvision=0.11.1=py36_cpu
 tornado=6.1=py36h2bbff1b_0
+typing_extensions=3.10.0.2=pyh06a4308_0
 vc=14.2=h21ff451_1
 vs2015_runtime=14.27.29016=h5e58377_2
 wheel=0.37.0=pyhd3eb1b0_0
