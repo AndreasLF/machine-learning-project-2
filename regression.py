@@ -1,7 +1,8 @@
 from transform_data import *
 import sklearn.linear_model as lm
 from sklearn import model_selection
-
+import torch
+from toolbox_02450 import train_neural_net
 
 # =============================================
 # Prepare data for regression
@@ -314,6 +315,14 @@ w_rlr = np.empty((M,K1))
 mu = np.empty((K1, M-1))
 sigma = np.empty((K1, M-1))
 
+# Parameters for neural network classifier
+max_iter = 200
+tolerance=1e-6
+loss_fn = torch.nn.MSELoss() # notice how this is now a mean-squared-error loss
+# Initialize variables 
+hidden_units = range(1,5)
+error_test_ann = np.empty((K1,1))
+opt_hidden_units_ann = np.empty((K1,1))
 
 # ===========================================================================
 # OUTER cross-validation layer
@@ -330,7 +339,7 @@ for train_idxs, test_idxs in cv_outer.split(X,y):
     # Define lists to keep 
     MSEs_baseline = []
     MSEs_regression = []
-
+    MSEs_ann = []
 
     M = X.shape[1]
     w = np.empty((M,K2,len(lambdas)))
@@ -338,6 +347,10 @@ for train_idxs, test_idxs in cv_outer.split(X,y):
     test_error = np.empty((K2,len(lambdas)))
     f = 0
     y = y.squeeze()
+
+
+    # Store test error ANN
+    test_error_ann = np.empty((K2,len(hidden_units)))
 
     # --------------------------------------------------
     # INNER cross-validation layer
@@ -361,6 +374,23 @@ for train_idxs, test_idxs in cv_outer.split(X,y):
         Xty = X_train_inner.T @ y_train_inner
         XtX = X_train_inner.T @ X_train_inner
 
+
+        # reshape labels to correspond to the dimensions of the train data
+        y_train_inner_r = y_train_inner.reshape(len(y_train_inner),1)  
+        y_test_inner_r = y_test_inner.reshape(len(y_test_inner),1)   
+
+        # Convert data to tensors 
+        X_train_inner_tensor = torch.from_numpy(X_train_inner)
+        y_train_inner_tensor = torch.from_numpy(y_train_inner_r)
+        X_test_inner_tensor = torch.from_numpy(X_test_inner)
+        y_test_inner_tensor = torch.from_numpy(y_test_inner_r)
+
+        # Convert tensors to float tensorst
+        X_train_inner_tensor =  X_train_inner_tensor.type(torch.FloatTensor)
+        y_train_inner_tensor =  y_train_inner_tensor.type(torch.FloatTensor)
+        X_test_inner_tensor =  X_test_inner_tensor.type(torch.FloatTensor)
+        y_test_inner_tensor =  y_test_inner_tensor.type(torch.FloatTensor)
+
         # Loop through lambdas 
         for l in range(0,len(lambdas)):
             # Compute parameters for current value of lambda and current CV fold
@@ -370,6 +400,28 @@ for train_idxs, test_idxs in cv_outer.split(X,y):
             # Evaluate training and test performance
             train_error[f,l] = np.power(y_train_inner-X_train_inner @ w[:,f,l].T,2).mean(axis=0)
             test_error[f,l] = np.power(y_test_inner-X_test_inner @ w[:,f,l].T,2).mean(axis=0)
+        
+        for key, n_hidden_units in enumerate(hidden_units): 
+            print('\n\Hidden units: {}'.format(n_hidden_units))
+
+            model = lambda: torch.nn.Sequential(
+                                torch.nn.Linear(M, n_hidden_units), #M features to n_hidden_units
+                                torch.nn.Tanh(),   # 1st transfer function,
+                                torch.nn.Linear(n_hidden_units, 1), # n_hidden_units to 1 output neuron
+                                # no final tranfer function, i.e. "linear output"
+                                )
+
+            best_net, best_final_loss, best_learning_curve = train_neural_net(model, loss_fn, X_train_inner_tensor, y_train_inner_tensor,n_replicates=1, max_iter=max_iter,tolerance=tolerance)
+            print('\n\tBest loss: {}\n'.format(best_final_loss))
+            
+            # Make predictions 
+            y_test_est = best_net(X_test_inner_tensor)
+    
+            # Determine errors and errors
+            se = (y_test_est.float()-y_test_inner_tensor.float())**2 # squared error
+            mse = (sum(se).type(torch.float)/len(y_test_inner_tensor)).data.numpy() #mean
+            
+            test_error_ann[f,key] = mse
         f=f+1
 
         # print(train_idxs_inner.shape)
@@ -412,26 +464,237 @@ for train_idxs, test_idxs in cv_outer.split(X,y):
     error_test_rlr[k1] = np.square(y_test-X_test @ w_rlr[:,k1]).sum(axis=0)/y_test.shape[0]
     opt_lambdas[k1] = opt_lambda
 
-    # error_test_baseline[k1] = len(X_test_inner)/len(X_train) * np.sum(MSEs_baseline)
-    # print("Baseline:", error_test_baseline[k1][0])
-    # print("Regression:", error_test_rlr[k1][0])
-    # print("   Lambda:", opt_lambda)
+    error_test_baseline[k1] = len(X_test_inner)/len(X_train) * np.sum(MSEs_baseline)
 
+    opt_val_err_ann = np.min(np.mean(test_error_ann,axis=0))
+    opt_hidden_units = hidden_units[np.argmin(np.mean(test_error_ann,axis=0))]
+
+    print("Optimal error", opt_val_err_ann)
+    print("Optimal amount of hidden units", opt_hidden_units)
+
+    # reshape labels to correspond to the dimensions of the train data
+    y_train_r = y_train.reshape(len(y_train),1)  
+    y_test_r = y_test.reshape(len(y_test),1)   
+
+    # Convert data to tensors 
+    X_train_tensor = torch.from_numpy(X_train)
+    y_train_tensor = torch.from_numpy(y_train_r)
+    X_test_tensor = torch.from_numpy(X_test)
+    y_test_tensor = torch.from_numpy(y_test_r)
+
+    # Convert tensors to float tensorst
+    X_train_tensor =  X_train_tensor.type(torch.FloatTensor)
+    y_train_tensor =  y_train_tensor.type(torch.FloatTensor)
+    X_test_tensor =  X_test_tensor.type(torch.FloatTensor)
+    y_test_tensor =  y_test_tensor.type(torch.FloatTensor)
+
+    # Create new model with optimal hidden units 
+    model = lambda: torch.nn.Sequential(
+                                    torch.nn.Linear(M, opt_hidden_units), #M features to n_hidden_units
+                                    torch.nn.Tanh(),   # 1st transfer function,
+                                    torch.nn.Linear(opt_hidden_units, 1), # n_hidden_units to 1 output neuron
+                                    # no final tranfer function, i.e. "linear output"
+                                    )
+
+    # Run ANN with this model
+    best_net, best_final_loss, best_learning_curve = train_neural_net(model, loss_fn, X_train_tensor, y_train_tensor,n_replicates=1, max_iter=max_iter,tolerance=tolerance)
+
+    y_test_est = best_net(X_test_tensor)
+    
+    # Determine errors and errors
+    se = (y_test_est.float()-y_test_tensor.float())**2 # squared error
+    mse = (sum(se).type(torch.float)/len(y_test_tensor)).data.numpy() #mean
+    # errors.append(mse) # store error rate for current CV fold 
+    print(mse)
+    # Save test error and optimal hidden layers for ANN
+    opt_hidden_units_ann[k1] = opt_hidden_units
+    error_test_ann[k1] = mse
     # Increment k-fold layer counter 
     k1 += 1
 # ===========================================================================
 
 
 
-error_test_ann = np.arange(K1)
-hidden_layers_ann = np.zeros(K1)
+# error_test_ann = np.arange(K1)
+# hidden_layers_ann = np.zeros(K1)
 
+# opt_hidden_units_ann
 
-data = [hidden_layers_ann.squeeze(), error_test_ann.squeeze() ,opt_lambdas.squeeze() ,error_test_rlr.squeeze() ,error_test_baseline.squeeze()]
+data = [opt_hidden_units_ann.squeeze(), error_test_ann.squeeze() ,opt_lambdas.squeeze() ,error_test_rlr.squeeze() ,error_test_baseline.squeeze()]
 data = np.transpose(np.array(data))
 
 # print(data)
-results_table = pd.DataFrame(data,columns=["ANN", " ", "Linear Regresion", " ", "Baseline"])
+results_table = pd.DataFrame(data,columns=["ANN", " ", "Linear Regresion", "  ", "Baseline"])
 results_table.index += 1 
 
 print(results_table.to_latex()) 
+
+f = open("regression_latex_table.txt","w+")
+f.write(results_table.to_latex())
+f.close()
+
+# # =============================================
+# # ANN
+# # =============================================
+# # Amount of K-folds in inner and outer fold
+# K1 = 10
+# K2 = 10
+
+# error_train_rlr = np.empty((K1,1))
+# error_test_rlr = np.empty((K1,1))
+# opt_lambdas = np.empty((K1,1))
+# error_test_baseline = np.empty((K1,1))
+
+# # Parameters for neural network classifier
+# max_iter = 200
+# tolerance=1e-6
+# loss_fn = torch.nn.MSELoss() # notice how this is now a mean-squared-error loss
+# # Initialize variables 
+# hidden_units = range(1,5)
+# error_test_ann = np.empty((K1,1))
+# opt_hidden_units_ann = np.empty((K1,1))
+
+# w_rlr = np.empty((M,K1))
+
+# mu = np.empty((K1, M-1))
+# sigma = np.empty((K1, M-1))
+
+# # ===========================================================================
+# # OUTER cross-validation layer
+# cv_outer = KFold(n_splits=K1, shuffle=True, random_state=1)
+# k1 = 0
+# for train_idxs, test_idxs in cv_outer.split(X,y):
+#     print("Outer cv: "  + str(k1+1) + "/" + str(K1))
+
+#     # split data into the K1 folds, train and test
+#     X_train, X_test = X[train_idxs, :], X[test_idxs, :]
+#     y_train, y_test = y[train_idxs], y[test_idxs]
+
+#     # Define lists to keep 
+#     MSEs_ann = []
+
+#     M = X.shape[1]
+#     f = 0
+#     y = y.squeeze()
+
+
+
+#     # --------------------------------------------------
+#     # INNER cross-validation layer
+#     cv_inner = KFold(n_splits=K2, shuffle=True, random_state=1)
+#     k2 = 0
+
+#     # Store test error 
+#     test_error_ann = np.empty((K2,len(hidden_units)))
+
+#     f = 0
+#     for train_idxs_inner, test_idx_inner in cv_outer.split(X_train,y_train): 
+#         # print("Inner cv: "  + str(k2+1) + "/" + str(K2))
+
+#         # Make the inner train and test data 
+#         X_train_inner, X_test_inner = X_train[train_idxs_inner, :], X_train[test_idx_inner, :]
+#         y_train_inner, y_test_inner = y_train[train_idxs_inner], y_train[test_idx_inner]
+        
+#         # STANDARDIZE inner training and test set
+#         mu_inner = np.mean(X_train_inner[:, 1:], 0)
+#         sigma_inner = np.std(X_train_inner[:, 1:], 0)
+
+#         X_train_inner[:, 1:] = (X_train_inner[:, 1:] - mu_inner) / sigma_inner
+#         X_test_inner[:, 1:] = (X_test_inner[:, 1:] - mu_inner) / sigma_inner
+
+#         # reshape labels to correspond to the dimensions of the train data
+#         y_train_inner_r = y_train_inner.reshape(len(y_train_inner),1)  
+#         y_test_inner_r = y_test_inner.reshape(len(y_test_inner),1)   
+
+#         # Convert data to tensors 
+#         X_train_inner_tensor = torch.from_numpy(X_train_inner)
+#         y_train_inner_tensor = torch.from_numpy(y_train_inner_r)
+#         X_test_inner_tensor = torch.from_numpy(X_test_inner)
+#         y_test_inner_tensor = torch.from_numpy(y_test_inner_r)
+
+#         # Convert tensors to float tensorst
+#         X_train_inner_tensor =  X_train_inner_tensor.type(torch.FloatTensor)
+#         y_train_inner_tensor =  y_train_inner_tensor.type(torch.FloatTensor)
+#         X_test_inner_tensor =  X_test_inner_tensor.type(torch.FloatTensor)
+#         y_test_inner_tensor =  y_test_inner_tensor.type(torch.FloatTensor)
+
+
+#         for key, n_hidden_units in enumerate(hidden_units): 
+#             print('\n\Hidden units: {}'.format(n_hidden_units))
+
+#             model = lambda: torch.nn.Sequential(
+#                                 torch.nn.Linear(M, n_hidden_units), #M features to n_hidden_units
+#                                 torch.nn.Tanh(),   # 1st transfer function,
+#                                 torch.nn.Linear(n_hidden_units, 1), # n_hidden_units to 1 output neuron
+#                                 # no final tranfer function, i.e. "linear output"
+#                                 )
+
+#             best_net, best_final_loss, best_learning_curve = train_neural_net(model, loss_fn, X_train_inner_tensor, y_train_inner_tensor,n_replicates=1, max_iter=max_iter,tolerance=tolerance)
+#             print('\n\tBest loss: {}\n'.format(best_final_loss))
+            
+#             # Make predictions 
+#             y_test_est = best_net(X_test_inner_tensor)
+    
+#             # Determine errors and errors
+#             se = (y_test_est.float()-y_test_inner_tensor.float())**2 # squared error
+#             mse = (sum(se).type(torch.float)/len(y_test_inner_tensor)).data.numpy() #mean
+            
+#             test_error_ann[f,key] = mse
+#         f = f + 1
+
+#         # opt_val_err = np.min(MSEs_ann)
+#         # opt_hidden_units = hidden_units[np.argmin(MSEs_ann)]
+#         # print("Best loss: ", opt_val_err)
+#         # print("Best hidden units: ", opt_hidden_units)
+#         # k2 += 1
+#     # --------------------------------------------------
+#     # print(test_error_ann)
+#     # print(best_final_loss)
+#     opt_val_err_ann = np.min(np.mean(test_error_ann,axis=0))
+#     opt_hidden_units = hidden_units[np.argmin(np.mean(test_error_ann,axis=0))]
+
+#     print("Optimal error", opt_val_err_ann)
+#     print("Optimal amount of hidden units", opt_hidden_units)
+
+#     # Convert data to tensors 
+#     X_train_tensor = torch.from_numpy(X_train_inner)
+#     y_train_tensor = torch.from_numpy(y_train_inner)
+#     X_test_tensor = torch.from_numpy(X_test_inner)
+#     y_test_tensor = torch.from_numpy(y_test_inner)
+
+#     # Convert tensors to float tensorst
+#     X_train_tensor =  X_train_tensor.type(torch.FloatTensor)
+#     y_train_tensor =  y_train_tensor.type(torch.FloatTensor)
+#     X_test_tensor =  X_test_tensor.type(torch.FloatTensor)
+#     y_test_tensor =  y_test_tensor.type(torch.FloatTensor)
+
+#     # Create new model with optimal hidden units 
+#     model = lambda: torch.nn.Sequential(
+#                                     torch.nn.Linear(M, opt_hidden_units), #M features to n_hidden_units
+#                                     torch.nn.Tanh(),   # 1st transfer function,
+#                                     torch.nn.Linear(opt_hidden_units, 1), # n_hidden_units to 1 output neuron
+#                                     # no final tranfer function, i.e. "linear output"
+#                                     )
+
+#     # Run ANN with this model
+#     best_net, best_final_loss, best_learning_curve = train_neural_net(model, loss_fn, X_train_tensor, y_train_tensor,n_replicates=1, max_iter=max_iter,tolerance=tolerance)
+
+#     y_test_est = best_net(X_test_tensor)
+    
+#     # Determine errors and errors
+#     se = (y_test_est.float()-y_test_tensor.float())**2 # squared error
+#     mse = (sum(se).type(torch.float)/len(y_test_tensor)).data.numpy() #mean
+#     # errors.append(mse) # store error rate for current CV fold 
+#     print(mse)
+#     # Save test error and optimal hidden layers for ANN
+#     opt_hidden_units_ann[k1] = opt_hidden_units
+#     error_test_ann[k1] = mse
+    
+#     # Increment k-fold layer counter 
+#     k1 += 1
+# # ===========================================================================
+
+# results_table[" "] = error_test_ann
+# results_table["ANN"] = opt_hidden_units_ann
+
+# print(results_table.to_latex()) 
