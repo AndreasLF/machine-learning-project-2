@@ -29,11 +29,14 @@ scaled_data = preprocessing.scale(X.values)
 # Create new dataframe with the data 
 scaled_X_df = pd.DataFrame(scaled_data, columns = X.columns)
 
-X = scaled_data
+
+# X = scaled_data
+X = X.to_numpy()
 y = y.to_numpy()
 
+print(X)
 # =============================================
-# Check if matrix is inversible 
+# Check if matrix is invertible 
 # =============================================
 
 xx= np.matmul(np.transpose(X),X)
@@ -103,7 +106,7 @@ def rlr_validate(X,y,lambdas,cvf=10):
         train_err_vs_lambda train error as function of lambda (vector)
         test_err_vs_lambda  test error as function of lambda (vector)
     '''
-    CV = model_selection.KFold(cvf, shuffle=True)
+    CV = model_selection.KFold(cvf, shuffle=True, random_state=1)
     M = X.shape[1]
     w = np.empty((M,cvf,len(lambdas)))
     train_error = np.empty((cvf,len(lambdas)))
@@ -122,7 +125,7 @@ def rlr_validate(X,y,lambdas,cvf=10):
         
         X_train[:, 1:] = (X_train[:, 1:] - mu) / sigma
         X_test[:, 1:] = (X_test[:, 1:] - mu) / sigma
-        
+
         # precompute terms
         Xty = X_train.T @ y_train
         XtX = X_train.T @ X_train
@@ -164,8 +167,8 @@ lambdas = np.power(10.,range(-2,12))
 #T = len(lambdas)
 Error_train = np.empty((K,1))
 Error_test = np.empty((K,1))
-Error_train_rlr = np.empty((K,1))
-Error_test_rlr = np.empty((K,1))
+error_train_rlr = np.empty((K,1))
+error_test_rlr = np.empty((K,1))
 Error_train_nofeatures = np.empty((K,1))
 Error_test_nofeatures = np.empty((K,1))
 w_rlr = np.empty((M,K))
@@ -206,8 +209,8 @@ for train_index, test_index in CV.split(X,y):
     lambdaI[0,0] = 0 # Do no regularize the bias term
     w_rlr[:,k] = np.linalg.solve(XtX+lambdaI,Xty).squeeze()
     # Compute mean squared error with regularization with optimal lambda
-    Error_train_rlr[k] = np.square(y_train-X_train @ w_rlr[:,k]).sum(axis=0)/y_train.shape[0]
-    Error_test_rlr[k] = np.square(y_test-X_test @ w_rlr[:,k]).sum(axis=0)/y_test.shape[0]
+    error_train_rlr[k] = np.square(y_train-X_train @ w_rlr[:,k]).sum(axis=0)/y_train.shape[0]
+    error_test_rlr[k] = np.square(y_test-X_test @ w_rlr[:,k]).sum(axis=0)/y_test.shape[0]
 
     # Estimate weights for unregularized linear regression, on entire training set
     w_noreg[:,k] = np.linalg.solve(XtX,Xty).squeeze()
@@ -261,10 +264,10 @@ print('- Test error:     {0}'.format(Error_test.mean()))
 print('- R^2 train:     {0}'.format((Error_train_nofeatures.sum()-Error_train.sum())/Error_train_nofeatures.sum()))
 print('- R^2 test:     {0}\n'.format((Error_test_nofeatures.sum()-Error_test.sum())/Error_test_nofeatures.sum()))
 print('Regularized linear regression:')
-print('- Training error: {0}'.format(Error_train_rlr.mean()))
-print('- Test error:     {0}'.format(Error_test_rlr.mean()))
-print('- R^2 train:     {0}'.format((Error_train_nofeatures.sum()-Error_train_rlr.sum())/Error_train_nofeatures.sum()))
-print('- R^2 test:     {0}\n'.format((Error_test_nofeatures.sum()-Error_test_rlr.sum())/Error_test_nofeatures.sum()))
+print('- Training error: {0}'.format(error_train_rlr.mean()))
+print('- Test error:     {0}'.format(error_test_rlr.mean()))
+print('- R^2 train:     {0}'.format((Error_train_nofeatures.sum()-error_train_rlr.sum())/Error_train_nofeatures.sum()))
+print('- R^2 test:     {0}\n'.format((Error_test_nofeatures.sum()-error_test_rlr.sum())/Error_test_nofeatures.sum()))
 
 
 print("Optimal lambda: ", opt_lambda)
@@ -284,3 +287,151 @@ for m in range(M):
 
 # Print latex table 
 print(table.to_latex())
+
+
+# =============================================
+# Regression and baseline two-fold cross-validation
+# =============================================
+
+# Amount of K-folds in inner and outer fold
+K1 = 10
+K2 = 10
+
+
+# Values of lambda
+lambdas = np.power(10.,range(-2,12))
+
+# Initialize variables 
+
+
+error_train_rlr = np.empty((K1,1))
+error_test_rlr = np.empty((K1,1))
+opt_lambdas = np.empty((K1,1))
+error_test_baseline = np.empty((K1,1))
+
+w_rlr = np.empty((M,K1))
+
+mu = np.empty((K1, M-1))
+sigma = np.empty((K1, M-1))
+
+
+# ===========================================================================
+# OUTER cross-validation layer
+cv_outer = KFold(n_splits=K1, shuffle=True, random_state=1)
+k1 = 0
+for train_idxs, test_idxs in cv_outer.split(X,y):
+    print("Outer cv: "  + str(k1+1) + "/" + str(K1))
+
+    # split data into the K1 folds, train and test
+    X_train, X_test = X[train_idxs, :], X[test_idxs, :]
+    y_train, y_test = y[train_idxs], y[test_idxs]
+
+
+    # Define lists to keep 
+    MSEs_baseline = []
+    MSEs_regression = []
+
+
+    M = X.shape[1]
+    w = np.empty((M,K2,len(lambdas)))
+    train_error = np.empty((K2,len(lambdas)))
+    test_error = np.empty((K2,len(lambdas)))
+    f = 0
+    y = y.squeeze()
+
+    # --------------------------------------------------
+    # INNER cross-validation layer
+    cv_inner = KFold(n_splits=K2, shuffle=True, random_state=1)
+    k2 = 0
+    for train_idxs_inner, test_idx_inner in cv_outer.split(X_train,y_train): 
+        # print("Inner cv: "  + str(k2+1) + "/" + str(K2))
+
+        # Make the inner train and test data 
+        X_train_inner, X_test_inner = X_train[train_idxs_inner, :], X_train[test_idx_inner, :]
+        y_train_inner, y_test_inner = y_train[train_idxs_inner], y_train[test_idx_inner]
+        
+        # STANDARDIZE inner training and test set
+        mu_inner = np.mean(X_train_inner[:, 1:], 0)
+        sigma_inner = np.std(X_train_inner[:, 1:], 0)
+
+        X_train_inner[:, 1:] = (X_train_inner[:, 1:] - mu_inner) / sigma_inner
+        X_test_inner[:, 1:] = (X_test_inner[:, 1:] - mu_inner) / sigma_inner
+
+        # precompute terms
+        Xty = X_train_inner.T @ y_train_inner
+        XtX = X_train_inner.T @ X_train_inner
+
+        # Loop through lambdas 
+        for l in range(0,len(lambdas)):
+            # Compute parameters for current value of lambda and current CV fold
+            lambdaI = lambdas[l] * np.eye(M)
+            lambdaI[0,0] = 0 # remove bias regularization
+            w[:,f,l] = np.linalg.solve(XtX+lambdaI,Xty).squeeze()
+            # Evaluate training and test performance
+            train_error[f,l] = np.power(y_train_inner-X_train_inner @ w[:,f,l].T,2).mean(axis=0)
+            test_error[f,l] = np.power(y_test_inner-X_test_inner @ w[:,f,l].T,2).mean(axis=0)
+        f=f+1
+
+        # print(train_idxs_inner.shape)
+
+        # Apply baseline model. Mean of train labels
+        predict_baseline = np.mean(y_train_inner)
+      
+        # Calculate mean square loss 
+        MSE_baseline = np.sum((y_test_inner - predict_baseline)**2) / float(len(y_test_inner)) 
+        MSEs_baseline.append(MSE_baseline)
+
+
+        # k2 += 1
+    # --------------------------------------------------
+    
+    opt_val_err = np.min(np.mean(test_error,axis=0))
+    opt_lambda = lambdas[np.argmin(np.mean(test_error,axis=0))]
+    train_err_vs_lambda = np.mean(train_error,axis=0)
+    test_err_vs_lambda = np.mean(test_error,axis=0)
+    mean_w_vs_lambda = np.squeeze(np.mean(w,axis=1))
+
+    # Standardize outer fold based on training set, and save the mean and standard
+    # deviations since they're part of the model (they would be needed for
+    # making new predictions) - for brevity we won't always store these in the scripts
+    mu[k1, :] = np.mean(X_train[:, 1:], 0)
+    sigma[k1, :] = np.std(X_train[:, 1:], 0)
+    
+    X_train[:, 1:] = (X_train[:, 1:] - mu[k1, :] ) / sigma[k1, :] 
+    X_test[:, 1:] = (X_test[:, 1:] - mu[k1, :] ) / sigma[k1, :] 
+    
+    Xty = X_train.T @ y_train
+    XtX = X_train.T @ X_train
+    
+    # Estimate weights for the optimal value of lambda, on entire training set
+    lambdaI = opt_lambda * np.eye(M)
+    lambdaI[0,0] = 0 # Do no regularize the bias term
+    w_rlr[:,k1] = np.linalg.solve(XtX+lambdaI,Xty).squeeze()
+    # Compute mean squared error with regularization with optimal lambda
+    error_train_rlr[k1] = np.square(y_train-X_train @ w_rlr[:,k1]).sum(axis=0)/y_train.shape[0]
+    error_test_rlr[k1] = np.square(y_test-X_test @ w_rlr[:,k1]).sum(axis=0)/y_test.shape[0]
+    opt_lambdas[k1] = opt_lambda
+
+    # error_test_baseline[k1] = len(X_test_inner)/len(X_train) * np.sum(MSEs_baseline)
+    # print("Baseline:", error_test_baseline[k1][0])
+    # print("Regression:", error_test_rlr[k1][0])
+    # print("   Lambda:", opt_lambda)
+
+    # Increment k-fold layer counter 
+    k1 += 1
+# ===========================================================================
+
+
+
+error_test_ann = np.arange(K1)
+hidden_layers_ann = np.zeros(K1)
+
+
+data = [hidden_layers_ann.squeeze(), error_test_ann.squeeze() ,opt_lambdas.squeeze() ,error_test_rlr.squeeze() ,error_test_baseline.squeeze()]
+data = np.transpose(np.array(data))
+
+# print(data)
+results_table = pd.DataFrame(data,columns=["ANN", " ", "Linear Regresion", " ", "Baseline"])
+results_table.index += 1 
+
+print(results_table.to_latex()) 
