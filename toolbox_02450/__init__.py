@@ -112,7 +112,7 @@ def feature_selector_lr(X,y,cvf=10,features_record=None,loss_record=None,display
             trial_selected = np.concatenate((selected_features,np.array([feature])),0).astype(int)
             # validate selected features with linear regression and cross-validation:
             trial_loss = glm_validate(X[:,trial_selected],y,cvf)
-            if display is 'verbose':
+            if display == 'verbose':
                 print(trial_loss)
             if trial_loss<min_loss:
                 min_loss = trial_loss 
