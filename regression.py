@@ -323,7 +323,7 @@ mu = np.empty((K1, M-1))
 sigma = np.empty((K1, M-1))
 
 # Parameters for neural network classifier
-max_iter = 200
+max_iter = 20000
 tolerance=1e-6
 loss_fn = torch.nn.MSELoss() # notice how this is now a mean-squared-error loss
 # Initialize variables 
