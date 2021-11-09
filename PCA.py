@@ -43,100 +43,100 @@ for feature in features:
 # Standadizing the data with
 scaled_data = preprocessing.scale(X.values)
 LABEL_ENCODED = pd.DataFrame(scaled_data, columns = X.columns)
-
+print(LABEL_ENCODED)
 # -----------------------------------------------------------------------------------
-
-# PCA and explained variance with label encoded data
-N, M = LABEL_ENCODED.shape
-X = np.array(LABEL_ENCODED)
-# Subtract mean value from data
-Y = X - np.ones((N,1))*X.mean(axis=0)
-# PCA by computing SVD of Y
-U,S,V = svd(Y,full_matrices=False)
-
-
-# We saw in 2.1.3 that the first 3 components explaiend more than 90
-# percent of the variance. Let's look at their coefficients:
-pcs = [0,1,2]
-legendStrs = ['PC'+str(e+1) for e in pcs]
-c = ['r','g','b']
-bw = .2
-r = np.arange(1,M+1)
-for i in pcs:    
-    plt.bar(r+i*bw, V[:,i], width=bw)
-plt.xticks(r+bw, features)
-plt.xlabel('Attributes')
-plt.ylabel('Component coefficients')
-plt.legend(legendStrs)
-plt.grid()
-plt.title('Adult Census: PCA Component Coefficients')
-plt.xticks(rotation=70)
-plt.grid()
-plt.savefig("plots/pca_coefficient_orientaion.jpg", bbox_inches='tight')
-
-
-# ----------------------------------
-# Plot explained variance
-# ----------------------------------
-# Compute explained variance
-rho = (S*S) / (S*S).sum()
-cummulative = np.cumsum(rho)
-threshold = 0.9
-# Clear plot 
-plt.clf()
-# Make plot 
-plt.figure()
-plt.plot(range(1,len(rho)+1),rho,'x-')
-plt.plot(range(1,len(rho)+1),np.cumsum(rho),'o-')
-plt.plot([1,len(rho)],[threshold, threshold],'k--')
-plt.title('Explained Variance');
-plt.xlabel('Principal components');
-plt.ylabel('Percentage of explained variance');
-plt.legend(['Individual','Cumulative','Threshold'])
-plt.savefig("plots/explained_variance_plot.jpg", bbox_inches='tight')
-
-
-# Project the centered data onto principal component space
-Z = Y @ V
-
-classes = sorted(set(y))
-class_dict = dict(zip(classes,range(2)))
-y = np.asarray([class_dict[value] for value in y])
-
-C = len(classes)
-
-# ----------------------------------
-# Plot principal components
-# ----------------------------------
-# Indices of the principal components to be plotted
-PCs_list = [(0,1),(1,2),(11,12)]
-
-for PCs in PCs_list:
-    i = PCs[0]
-    j = PCs[1]
-
-    # Clear plot 
-    plt.clf()
-    # Plot PCA of the data
-    f = figure()
-    title('Adult Census: PCA')
-    for c in range(C):
-        # select indices belonging to class c:
-        class_mask = y==c
-        plot(Z[class_mask,i], Z[class_mask,j], 'o', alpha=.5)
-    legend(classes)
-    xlabel('PC{0}'.format(i+1))
-    ylabel('PC{0}'.format(j+1))
-    f.savefig("plots/PC"+str(i+1)+"_PC"+str(j+1)+"_plot.jpg", bbox_inches='tight')
-
-principal_components = []
-for n in range(1,15):
-    principal_components.append(f'PC{n}')
-# print(principal_components)
-ExplainedVarTable = pd.DataFrame(np.matrix([rho*100,cummulative*100]).T,
-                                 index=principal_components,
-                                 columns=["Explained Variance","Cummulative Sum"])
-print(ExplainedVarTable.to_latex())
+#
+# # PCA and explained variance with label encoded data
+# N, M = LABEL_ENCODED.shape
+# X = np.array(LABEL_ENCODED)
+# # Subtract mean value from data
+# Y = X - np.ones((N,1))*X.mean(axis=0)
+# # PCA by computing SVD of Y
+# U,S,V = svd(Y,full_matrices=False)
+#
+#
+# # We saw in 2.1.3 that the first 3 components explaiend more than 90
+# # percent of the variance. Let's look at their coefficients:
+# pcs = [0,1,2]
+# legendStrs = ['PC'+str(e+1) for e in pcs]
+# c = ['r','g','b']
+# bw = .2
+# r = np.arange(1,M+1)
+# for i in pcs:
+#     plt.bar(r+i*bw, V[:,i], width=bw)
+# plt.xticks(r+bw, features)
+# plt.xlabel('Attributes')
+# plt.ylabel('Component coefficients')
+# plt.legend(legendStrs)
+# plt.grid()
+# plt.title('Adult Census: PCA Component Coefficients')
+# plt.xticks(rotation=70)
+# plt.grid()
+# plt.savefig("plots/pca_coefficient_orientaion.jpg", bbox_inches='tight')
+#
+#
+# # ----------------------------------
+# # Plot explained variance
+# # ----------------------------------
+# # Compute explained variance
+# rho = (S*S) / (S*S).sum()
+# cummulative = np.cumsum(rho)
+# threshold = 0.9
+# # Clear plot
+# plt.clf()
+# # Make plot
+# plt.figure()
+# plt.plot(range(1,len(rho)+1),rho,'x-')
+# plt.plot(range(1,len(rho)+1),np.cumsum(rho),'o-')
+# plt.plot([1,len(rho)],[threshold, threshold],'k--')
+# plt.title('Explained Variance');
+# plt.xlabel('Principal components');
+# plt.ylabel('Percentage of explained variance');
+# plt.legend(['Individual','Cumulative','Threshold'])
+# plt.savefig("plots/explained_variance_plot.jpg", bbox_inches='tight')
+#
+#
+# # Project the centered data onto principal component space
+# Z = Y @ V
+#
+# classes = sorted(set(y))
+# class_dict = dict(zip(classes,range(2)))
+# y = np.asarray([class_dict[value] for value in y])
+#
+# C = len(classes)
+#
+# # ----------------------------------
+# # Plot principal components
+# # ----------------------------------
+# # Indices of the principal components to be plotted
+# PCs_list = [(0,1),(1,2),(11,12)]
+#
+# for PCs in PCs_list:
+#     i = PCs[0]
+#     j = PCs[1]
+#
+#     # Clear plot
+#     plt.clf()
+#     # Plot PCA of the data
+#     f = figure()
+#     title('Adult Census: PCA')
+#     for c in range(C):
+#         # select indices belonging to class c:
+#         class_mask = y==c
+#         plot(Z[class_mask,i], Z[class_mask,j], 'o', alpha=.5)
+#     legend(classes)
+#     xlabel('PC{0}'.format(i+1))
+#     ylabel('PC{0}'.format(j+1))
+#     f.savefig("plots/PC"+str(i+1)+"_PC"+str(j+1)+"_plot.jpg", bbox_inches='tight')
+#
+# principal_components = []
+# for n in range(1,15):
+#     principal_components.append(f'PC{n}')
+# # print(principal_components)
+# ExplainedVarTable = pd.DataFrame(np.matrix([rho*100,cummulative*100]).T,
+#                                  index=principal_components,
+#                                  columns=["Explained Variance","Cummulative Sum"])
+# print(ExplainedVarTable.to_latex())
 
 
 
