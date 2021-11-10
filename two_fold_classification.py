@@ -40,12 +40,12 @@ X = LABEL_ENCODED.to_numpy()
 # =============================================
 
 # Amount of K-folds in inner and outer fold
-K1 = 2
-K2 = 2
+K1 = 5
+K2 = 5
 
 
 # Logistic regression initialization
-
+lambda_interval = np.logspace(-6, 6, 50)
 
 
 # Classification tree initialization
@@ -58,6 +58,7 @@ error_test_baseline = np.empty((K1,1))
 error_test_lr = np.empty((K1,1))
 error_test_ct = np.empty((K1,1))
 opt_tree_comlexity = np.empty((K1,1))
+opt_lambda_complexity = np.empty((K1,1))
 
 # Outer cross validation layer
 cv_outer = KFold(n_splits=K1, shuffle=True, random_state=1)
@@ -74,6 +75,8 @@ for train_idxs, test_idxs in cv_outer.split(X,y):
 
     # Store test error data for CT
     test_error_ct = np.empty((K2, len(tc)))
+    #Store test error data for LR
+    test_error_lr = np.empty((K2, len(lambda_interval)))
     # Store mean square errors for the baseline model
     MSEs_baseline = []
 
@@ -105,18 +108,42 @@ for train_idxs, test_idxs in cv_outer.split(X,y):
 
             MSE = np.sum((y_test_inner - y_est_test) ** 2) / float(len(y_test_inner))
             test_error_ct[f,i] = MSE
-        f = f+1
-        # =================================================
 
+        # =================================================
 
         # ================ Inner LR model ================
+        train_error_rate = np.zeros(len(lambda_interval))
+        test_error_rate = np.zeros(len(lambda_interval))
+        coefficient_norm = np.zeros(len(lambda_interval))
+        for k in range(0, len(lambda_interval)):
+            model = LogisticRegression(penalty='l2', C=1 / lambda_interval[k],max_iter=20000)
 
+            model.fit(X_train_inner, y_train_inner)
 
+            y_train_est = model.predict(X_train_inner).T
+            y_test_est = model.predict(X_test_inner).T
+
+            train_error_rate[k] = np.sum(y_train_est != y_train_inner) / len(y_train_inner)
+            test_error_rate[k] = np.sum(y_test_est != y_test_inner) / len(y_test_inner)
+
+            w_est = model.coef_[0]
+            coefficient_norm[k] = np.sqrt(np.sum(w_est ** 2))
+
+        # Find optimal lambda value
+        min_error = np.min(test_error_rate)
+        opt_lambda_idx = np.argmin(test_error_rate)
+        opt_lambda = lambda_interval[opt_lambda_idx]
+        LR = LogisticRegression(penalty='l2', C=1/opt_lambda,max_iter=20000)
+        LR.fit(X_train_inner,y_train_inner)
+        y_est_test_lr = LR.predict(X_test_inner)
+
+        MSE_LR = np.sum((y_test_inner - y_est_test_lr) ** 2) / float(len(y_test_inner))
+        test_error_lr[f, opt_lambda_idx] = MSE_LR
 
 
         # =================================================
 
-
+        f = f+1
 
         # ================ Inner Baseline model ================
         # Apply baseline model
@@ -140,6 +167,11 @@ for train_idxs, test_idxs in cv_outer.split(X,y):
     opt_tc = tc[np.argmin(np.mean(test_error_ct,axis=0))]
 
 
+    # Extract optimal error and parameters (logistic regression)
+    opt_val_err_lr = np.min(np.mean(test_error_lr, axis=0))
+    opt_val_lambda = lambda_interval[np.argmin(np.mean(test_error_lr,axis=0))]
+
+
     # ========= Re-train CT with optimal parameters (outer layer) =========
     # Fit decision tree classifier, Gini split criterion, different pruning levels
     dtc = tree.DecisionTreeClassifier(criterion='gini', max_depth=opt_tc)
@@ -155,8 +187,16 @@ for train_idxs, test_idxs in cv_outer.split(X,y):
     opt_tree_comlexity[k1] = opt_tc
 
     # ========= Re-train LR with optimal parameters (outer layer) =========
+    LR = LogisticRegression(penalty='l2', C=1 / opt_val_lambda, max_iter=20000)
+    LR.fit(X_train, y_train)
+    y_est_test_lr = LR.predict(X_test)
 
+    # Calculate MSE with optimal parameters
+    mse_lr = np.sum((y_test - y_est_test_lr) ** 2) / float(len(y_test))
 
+    # Save test error and optimal parameters for LR
+    error_test_lr[k1] = mse_lr
+    opt_lambda_complexity[k1] = opt_val_lambda
 
 
     k1 += 1
@@ -167,15 +207,15 @@ for train_idxs, test_idxs in cv_outer.split(X,y):
 
 # Save data and prep data for export to latex
 
-data = [opt_tree_comlexity.squeeze(),error_test_ct.squeeze(),error_test_baseline.squeeze()]
+data = [opt_tree_comlexity.squeeze(),error_test_ct.squeeze(),opt_lambda_complexity.squeeze(),error_test_lr.squeeze(),error_test_baseline.squeeze()]
 data = np.transpose(np.array(data))
 print(data)
 
-results_table = pd.DataFrame(data,columns=["Classification Tree", " ","Baseline"])
+results_table = pd.DataFrame(data,columns=["Classification Tree"," ","Logistic Regression"," ","Baseline"])
 results_table.index += 1
 
 print(results_table.to_latex())
 
-# f = open("classification_latex_table.txt","w+")
-# f.write(results_table.to_latex())
-# f.close()
+f = open("classification_latex_table.txt","w+")
+f.write(results_table.to_latex())
+f.close()

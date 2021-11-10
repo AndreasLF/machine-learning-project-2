@@ -1,0 +1,11 @@
+\begin{tabular}{lrrrrr}
+\toprule
+{} & \multicolumn{2}{l}{Classification Tree} & \multicolumn{2}{l}{Logistic Regression} &  Baseline \\
+\midrule
+1 &                  8.0 &  0.144963 &             0.002683 &  0.189650 &  0.242563 \\
+2 &                  9.0 &  0.163084 &             0.000005 &  0.195946 &  0.239914 \\
+3 &                  8.0 &  0.145885 &             0.000002 &  0.194564 &  0.239607 \\
+4 &                  8.0 &  0.143888 &             0.001526 &  0.194717 &  0.241143 \\
+5 &                  8.0 &  0.140203 &             0.754312 &  0.195178 &  0.240720 \\
+\bottomrule
+\end{tabular}
