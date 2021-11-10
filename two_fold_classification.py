@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import load_data
 from sklearn import preprocessing
+from sklearn.dummy import DummyClassifier
 from sklearn import tree,model_selection
 from sklearn.model_selection import KFold
 from matplotlib.pyplot import figure, plot, xlabel, ylabel, legend, show, boxplot
@@ -42,22 +43,14 @@ X = LABEL_ENCODED.to_numpy()
 K1 = 2
 K2 = 2
 
-# Baseline initialization
-
-
 
 # Logistic regression initialization
 
 
-# ================  Classification tree initialization  ================
 
-
+# Classification tree initialization
 # Tree complexity parameter range - constraint on tree maximum depth
 tc = np.arange(2, 21, 1)
-
-
-
-# =============================================
 
 
 # Initialize error arrays
@@ -76,10 +69,13 @@ for train_idxs, test_idxs in cv_outer.split(X,y):
     X_train, X_test = X[train_idxs, :], X[test_idxs, :]
     y_train, y_test = y[train_idxs], y[test_idxs]
 
-    # Denotes the indices of the inner-layer variable loop-throughs
+    # Controls the indices of the inner-layer variable loop-throughs (CT model)
     f = 0
 
+    # Store test error data for CT
     test_error_ct = np.empty((K2, len(tc)))
+    # Store mean square errors for the baseline model
+    MSEs_baseline = []
 
     # INNER cross-validation layer
     cv_inner = KFold(n_splits=K2, shuffle=True, random_state=1)
@@ -109,7 +105,9 @@ for train_idxs, test_idxs in cv_outer.split(X,y):
 
             MSE = np.sum((y_test_inner - y_est_test) ** 2) / float(len(y_test_inner))
             test_error_ct[f,i] = MSE
+        f = f+1
         # =================================================
+
 
         # ================ Inner LR model ================
 
@@ -121,20 +119,28 @@ for train_idxs, test_idxs in cv_outer.split(X,y):
 
 
         # ================ Inner Baseline model ================
+        # Apply baseline model
+        baseline_clf = DummyClassifier(strategy="most_frequent")
+        baseline_clf.fit(X_train_inner, y_train_inner)
+        predict_baseline = baseline_clf.predict(X_test_inner)
 
-
-
+        # Calculate mean square loss
+        MSE_baseline = np.sum((y_test_inner - predict_baseline)**2) / float(len(y_test_inner))
+        MSEs_baseline.append(MSE_baseline)
         # =================================================
 
 
-        f = f+1
+
+    # Baseline errors (outer layer)
+    error_test_baseline[k1] = len(X_test_inner)/len(X_train) * np.sum(MSEs_baseline)
+
 
     # Extract optimal error and parameters (classification)
     opt_val_err_ct = np.min(np.mean(test_error_ct, axis=0))
     opt_tc = tc[np.argmin(np.mean(test_error_ct,axis=0))]
 
-    # ========= Re-train CT with optimal parameters (outer layer) =========
 
+    # ========= Re-train CT with optimal parameters (outer layer) =========
     # Fit decision tree classifier, Gini split criterion, different pruning levels
     dtc = tree.DecisionTreeClassifier(criterion='gini', max_depth=opt_tc)
     dtc = dtc.fit(X_train, y_train.ravel())
@@ -151,19 +157,21 @@ for train_idxs, test_idxs in cv_outer.split(X,y):
     # ========= Re-train LR with optimal parameters (outer layer) =========
 
 
+
+
     k1 += 1
 
 
 
 
 
+# Save data and prep data for export to latex
 
-
-data = [opt_tree_comlexity.squeeze(),error_test_ct.squeeze()]
+data = [opt_tree_comlexity.squeeze(),error_test_ct.squeeze(),error_test_baseline.squeeze()]
 data = np.transpose(np.array(data))
 print(data)
-#  ,error_test_lr,error_test_baseline
-results_table = pd.DataFrame(data,columns=["Classification Tree", " "])
+
+results_table = pd.DataFrame(data,columns=["Classification Tree", " ","Baseline"])
 results_table.index += 1
 
 print(results_table.to_latex())
