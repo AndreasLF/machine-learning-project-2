@@ -40,12 +40,12 @@ X = LABEL_ENCODED.to_numpy()
 # =============================================
 
 # Amount of K-folds in inner and outer fold
-K1 = 5
-K2 = 5
+K1 = 10
+K2 = 10
 
 
 # Logistic regression initialization
-lambda_interval = np.logspace(-6, 6, 50)
+lambda_interval = np.logspace(-1, 3, 50)
 
 
 # Classification tree initialization
@@ -116,7 +116,7 @@ for train_idxs, test_idxs in cv_outer.split(X,y):
         test_error_rate = np.zeros(len(lambda_interval))
         coefficient_norm = np.zeros(len(lambda_interval))
         for k in range(0, len(lambda_interval)):
-            model = LogisticRegression(penalty='l2', C=1 / lambda_interval[k],max_iter=20000)
+            model = LogisticRegression(penalty='l2', C=1 / lambda_interval[k],max_iter=1000)
 
             model.fit(X_train_inner, y_train_inner)
 
@@ -133,7 +133,7 @@ for train_idxs, test_idxs in cv_outer.split(X,y):
         min_error = np.min(test_error_rate)
         opt_lambda_idx = np.argmin(test_error_rate)
         opt_lambda = lambda_interval[opt_lambda_idx]
-        LR = LogisticRegression(penalty='l2', C=1/opt_lambda,max_iter=20000)
+        LR = LogisticRegression(penalty='l2', C=1/opt_lambda,max_iter=1000)
         LR.fit(X_train_inner,y_train_inner)
         y_est_test_lr = LR.predict(X_test_inner)
 
@@ -187,7 +187,7 @@ for train_idxs, test_idxs in cv_outer.split(X,y):
     opt_tree_comlexity[k1] = opt_tc
 
     # ========= Re-train LR with optimal parameters (outer layer) =========
-    LR = LogisticRegression(penalty='l2', C=1 / opt_val_lambda, max_iter=20000)
+    LR = LogisticRegression(penalty='l2', C=1 / opt_val_lambda, max_iter=1000)
     LR.fit(X_train, y_train)
     y_est_test_lr = LR.predict(X_test)
 
